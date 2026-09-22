@@ -1,0 +1,44 @@
+name: Rating Service CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: rootPassword
+          MYSQL_DATABASE: rating_db
+          MYSQL_USER: springUser
+          MYSQL_PASSWORD: secretPassword
+        ports:
+          - 3308:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -prootPassword"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      LOGIN_DB_USER: springUser
+      LOGIN_DB_PASSWORD: secretPassword
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Run tests
+        run: ./mvnw test
