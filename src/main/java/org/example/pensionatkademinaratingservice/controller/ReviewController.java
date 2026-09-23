@@ -19,7 +19,7 @@ public class ReviewController {
         this.reviewService = reviewService;
     }
 
-
+    // CI/CD test
     @PostMapping("/api/reviews")
     public ReviewResponseDto createReview (
             @Valid @RequestBody ReviewRequestDto reviewRequestDto){
