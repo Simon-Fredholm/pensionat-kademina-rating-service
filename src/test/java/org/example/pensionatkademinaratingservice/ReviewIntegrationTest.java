@@ -1,19 +1,22 @@
 package org.example.pensionatkademinaratingservice;
 
-
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import org.example.pensionatkademinaratingservice.entity.Review;
 import org.example.pensionatkademinaratingservice.repository.ReviewRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.mysql.MySQLContainer;
 
 import java.util.List;
-import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -23,8 +26,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @WireMockTest(httpPort = 8080)
+@Testcontainers
 public class ReviewIntegrationTest {
 
+    @Container
+    @ServiceConnection
+    static MySQLContainer db =
+            new MySQLContainer("mysql:8");
 
     @Autowired
     private MockMvc mockMvc;
@@ -36,24 +44,22 @@ public class ReviewIntegrationTest {
     void returnBadRequest() throws Exception {
 
         String json = """
-            {
-              "customerId": 1,
-              "roomId": 1,
-              "rating": 6,
-              "comment": "super upplevelse"
-            }
-            """;
+                {
+                  "customerId": 1,
+                  "roomId": 1,
+                  "rating": 6,
+                  "comment": "super upplevelse"
+                }
+                """;
 
         mockMvc.perform(post("/api/reviews")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(json))
-
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
                 .andExpect(status().isBadRequest());
-
     }
 
     @Test
-    void createReview() throws Exception{
+    void createReview() throws Exception {
 
         stubFor(get(urlPathEqualTo("/api/bookings/check"))
                 .withQueryParam("customerId", equalTo("1"))
@@ -61,21 +67,20 @@ public class ReviewIntegrationTest {
                 .willReturn(aResponse()
                         .withHeader("Content-Type", "application/json")
                         .withBody("""
-                            {
-                              "booked": true
-                            }
-                            """)
+                                {
+                                  "booked": true
+                                }
+                                """)
                         .withStatus(200)));
 
         String json = """
-            {
-              "customerId": 1,
-              "roomId": 1,
-              "rating": 5,
-              "comment": "Bra rum"
-            }
-            """;
-
+                {
+                  "customerId": 1,
+                  "roomId": 1,
+                  "rating": 5,
+                  "comment": "Bra rum"
+                }
+                """;
 
         mockMvc.perform(post("/api/reviews")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -83,14 +88,7 @@ public class ReviewIntegrationTest {
                 .andExpect(status().isOk());
 
         List<Review> reviews = reviewRepository.findAll();
+
         assertFalse(reviews.isEmpty());
-
-
     }
-
-
-
-
-
-
 }
